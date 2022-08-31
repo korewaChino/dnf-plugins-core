@@ -415,6 +415,29 @@ Download module metadata from all enabled repositories, module artifacts and pro
 repository.
 %endif
 
+%if %{with python3}
+%package -n python3-dnf-plugin-system-upgrade
+Summary:        System Upgrade Plugin for DNF
+Requires:       python3-systemd
+Provides:       dnf-command(system-upgrade)
+Provides:       dnf-command(offline-upgrade)
+Provides:       dnf-command(offline-distrosync)
+Provides:       dnf-plugin-system-upgrade = %{version}-%{release}
+Provides:       python3-dnf-plugins-extras-system-upgrade = %{version}-%{release}
+Obsoletes:      fedup < 0.9.4
+Obsoletes:      dnf-plugin-system-upgrade < 0.10
+Obsoletes:      python3-dnf-plugins-extras-system-upgrade < %{dnf_plugins_extra}
+Conflicts:      python2-dnf-plugin-system-upgrade < %{version}-%{release}
+BuildRequires:  pkgconfig(systemd)
+BuildRequires:  systemd
+BuildRequires:  python3-systemd
+%{?systemd_requires}
+
+%description -n python3-dnf-plugin-system-upgrade
+System Upgrade Plugin for DNF. Enables offline system upgrades and distrosync
+using three commands: ``system-upgrade``, ``offline-upgrade``, and ``offline-distrosync``.
+%endif
+
 %prep
 %autosetup
 %if %{with python2}
@@ -451,6 +474,17 @@ pushd build-py3
   %make_install
 popd
 %endif
+
+%if %{with python3}
+mkdir -p %{buildroot}%{_unitdir}/system-update.target.wants/
+pushd %{buildroot}%{_unitdir}/system-update.target.wants/
+  ln -sr ../dnf-system-upgrade.service
+popd
+
+ln -sf %{_mandir}/man8/dnf-system-upgrade.8.gz %{buildroot}%{_mandir}/man8/dnf-offline-upgrade.8.gz
+ln -sf %{_mandir}/man8/dnf-system-upgrade.8.gz %{buildroot}%{_mandir}/man8/dnf-offline-distrosync.8.gz
+%endif
+
 %find_lang %{name}
 %if %{with yumutils}
   %if %{with python3}
@@ -780,6 +814,18 @@ ln -sf %{_mandir}/man1/%{yum_utils_subpackage_name}.1.gz %{buildroot}%{_mandir}/
 %{python3_sitelib}/dnf-plugins/modulesync.*
 %{python3_sitelib}/dnf-plugins/__pycache__/modulesync.*
 %{_mandir}/man8/dnf-modulesync.*
+%endif
+
+%if %{with python3}
+%files -n python3-dnf-plugin-system-upgrade
+%{_unitdir}/dnf-system-upgrade.service
+%{_unitdir}/dnf-system-upgrade-cleanup.service
+%{_unitdir}/system-update.target.wants/dnf-system-upgrade.service
+%{python3_sitelib}/dnf-plugins/system_upgrade.*
+%{python3_sitelib}/dnf-plugins/__pycache__/system_upgrade.*
+%{_mandir}/man8/dnf-system-upgrade.*
+%{_mandir}/man8/dnf-offline-upgrade.*
+%{_mandir}/man8/dnf-offline-distrosync.*
 %endif
 
 %changelog
